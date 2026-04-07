@@ -16,7 +16,7 @@ class business_verification extends Model
         'npwp',
         'omzet_bulanan',
         'jumlah_karyawan',
-        'jumlah_karyawan',
+        'lama_usaha_tahun',
         'status',
         'rejected_reason',
         'verified_by',

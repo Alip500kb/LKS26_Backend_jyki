@@ -14,10 +14,12 @@ return new class extends Migration
         Schema::create('business_verifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('user_id');
+            $table->string('nama_usaha');
             $table->string('nib');
             $table->string('npwp');
             $table->bigInteger('omzet_bulanan');
             $table->integer('jumlah_karyawan');
+            $table->integer('lama_usaha_tahun');
             $table->enum('status', ['draft', 'submitted', 'verified', 'rejected']);
             $table->text('rejected_reason')->nullable();
             $table->uuid('verified_by')->nullable();

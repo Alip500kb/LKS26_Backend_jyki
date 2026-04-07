@@ -13,7 +13,7 @@ class AuthLogin extends Controller
     public function signup(Request $request) {
         $valid = Validator::make($request->all(), [
             'name' => 'required|min:3|unique:users,name',
-            'email' => 'required|email',
+            'email' => 'required|email|unique:users.email',
             'password' => 'required|min:6'
         ]);
 
@@ -25,7 +25,7 @@ class AuthLogin extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'admin'
+            'role' => 'applicant'
         ]);
         return response()->json([
             'status' => 'berhasil',
