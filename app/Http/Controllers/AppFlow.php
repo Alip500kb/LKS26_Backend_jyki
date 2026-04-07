@@ -145,12 +145,19 @@ class AppFlow extends Controller
 
     public function analisis_peminjaman(Request $request,$id) {
         $ajuan_pembiayaan = financing_application::where('id', $id)->first();
-        $valid = Validator::make($request->all(), [
+        $role_sender = $request->user()->role;
+        if ($role_sender == 'manager') {
+            $valid = Validator::make($request->all(), [
+            'status' => 'required'
+        ]);
+        } else {
+            $valid = Validator::make($request->all(), [
             'skor_kelayakan' => 'numeric|required',
             'rekomendasi_limit' => 'required|numeric',
             'catatan_analisis' => 'required',
             'status' => 'required'
         ]);
+        }
 
         $status = $request->status;
         if ($request->user()->role == 'applicant') {
@@ -163,6 +170,9 @@ class AppFlow extends Controller
             return response()->json(['status' => 'tidak ditemukan'],404);
         } elseif ($request->status == 'rejected') {
             $status = 'rejected_by_' . $request->user()->role;
+            $ajuan_pembiayaan->update([
+                'rejected_reason' => $request->reason
+            ]); //butuh reason jika statusnya di reject
         }
         // dd($status);
         $ajuan_pembiayaan->update([
