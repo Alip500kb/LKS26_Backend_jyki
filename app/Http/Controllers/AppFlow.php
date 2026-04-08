@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\application_log;
 use App\Models\business_verification;
 use App\Models\financing_application;
+use App\Models\installment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -145,8 +147,8 @@ class AppFlow extends Controller
 
     public function analisis_peminjaman(Request $request,$id) {
         $ajuan_pembiayaan = financing_application::where('id', $id)->first();
-        $role_sender = $request->user()->role;
-        if ($role_sender == 'manager') {
+        $sender = $request->user();
+        if ($sender->role == 'manager') {
             $valid = Validator::make($request->all(), [
             'status' => 'required'
         ]);
@@ -160,6 +162,7 @@ class AppFlow extends Controller
         }
 
         $status = $request->status;
+        $status_from = $ajuan_pembiayaan->status;
         if ($request->user()->role == 'applicant') {
             return response()->json([
                 'message' => 'anda tidak memiliki otorisasi untuk melakukan ini'
@@ -186,6 +189,33 @@ class AppFlow extends Controller
             $ajuan_pembiayaan->update([
                 'approved_at' => Carbon::now()
             ]);
+        }
+
+        application_log::create([
+            'financing_application_id' => $ajuan_pembiayaan->id,
+            'status_from' => $status_from,
+            'status_to' => $ajuan_pembiayaan->status,
+            'role' => $sender->role,
+            'user_id' => $sender->id
+        ]);
+
+        $pokok = $ajuan_pembiayaan->jumlah_pembiayaan;
+        $bunga = $ajuan_pembiayaan->jumlah_pembiayaan * 0.06 * ($ajuan_pembiayaan->tenor_bulan / 12);
+        $total = $pokok + $bunga;
+        $tempo_awal = Carbon::now();
+
+        if ($ajuan_pembiayaan->status == 'approved') {
+            for ($i =1; $i <= $ajuan_pembiayaan->tenor_bulan; $i++) {
+            installment::create([
+            'financing_application_id' => $ajuan_pembiayaan->id,
+            'installment_number' => $i,
+            'jatuh_tempo' => $tempo_awal->addDays(30 * $i),
+            'nominal_pokok' => $pokok,
+            'nominal_bunga' => $bunga,
+            'total_cicilan' => $total,
+            'status' => 'unpaid'
+        ]);
+        }
         }
 
         return response()->json([

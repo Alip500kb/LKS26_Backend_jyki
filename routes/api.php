@@ -8,11 +8,12 @@ use Illuminate\Support\Facades\Route;
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
+//harus ubah tokenable_id type ke char di database
 Route::prefix('/v1')->group(function () {
     //route api untuk Auth dengan controller AuthLogin
     Route::prefix('auth')->group(function () {
         Route::post('/signup', [AuthLogin::class, 'signup'])->middleware('guest');
-        Route::post('/login', [AuthLogin::class, 'login'])->middleware('guest');
+        Route::post('/login', [AuthLogin::class, 'login'])->middleware(['guest','throttle:5.1']);
         Route::post('/signout', [AuthLogin::class, 'signout'])->middleware('auth:sanctum');
     });
 
@@ -22,4 +23,5 @@ Route::prefix('/v1')->group(function () {
     //Route untuk pembiayaan
     Route::post('/financing-applications', [AppFlow::class, 'pengajuan_pembiayaan'])->middleware('auth:sanctum');
     Route::patch('/financing-applications/{id}', [AppFlow::class, 'analisis_peminjaman'])->middleware('auth:sanctum');
+
 });
