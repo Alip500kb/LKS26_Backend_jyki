@@ -233,4 +233,14 @@ class AppFlow extends Controller
         }
         return response()->json($aplikasi,200);
     }
+
+    public function cek_verifs(Request $request) {
+        $aplikasi = financing_application::where('user_id', $request->user()->id)->first();
+        if (!$aplikasi) {
+            return response()->json([
+                'message' => 'belum mengajukan bisnis'
+            ]);
+        }
+        return response()->json($aplikasi,200);
+    }
 }
