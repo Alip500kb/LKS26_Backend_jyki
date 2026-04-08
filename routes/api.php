@@ -15,11 +15,13 @@ Route::prefix('/v1')->group(function () {
         Route::post('/signup', [AuthLogin::class, 'signup'])->middleware('guest');
         Route::post('/login', [AuthLogin::class, 'login'])->middleware(['guest','throttle:5.1']);
         Route::post('/signout', [AuthLogin::class, 'signout'])->middleware('auth:sanctum');
+        Route::get('/info', [AuthLogin::class, 'info'])->middleware('auth:sanctum');
     });
 
     //Route untuk seputar verifikasi dan stagged request
     Route::post('/business-verifications', [AppFlow::class, 'verifikasi_bisnis'])->middleware('auth:sanctum');
     Route::patch('/business-verifications/{id}', [AppFlow::class, 'verifikasi_oleh_verifier'])->middleware('auth:sanctum');
+    Route::get('/business-verifications', [AppFlow::class, 'cek_verif'])->middleware('auth:sanctum');
     //Route untuk pembiayaan
     Route::post('/financing-applications', [AppFlow::class, 'pengajuan_pembiayaan'])->middleware('auth:sanctum');
     Route::patch('/financing-applications/{id}', [AppFlow::class, 'analisis_peminjaman'])->middleware('auth:sanctum');

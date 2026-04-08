@@ -13,7 +13,7 @@ class AuthLogin extends Controller
     public function signup(Request $request) {
         $valid = Validator::make($request->all(), [
             'name' => 'required|min:3|unique:users,name',
-            'email' => 'required|email|unique:users.email',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6'
         ]);
 
@@ -64,5 +64,8 @@ class AuthLogin extends Controller
         return response()->json([
             'status' => 'berhasil'
         ],204);
+    }
+    public function info(Request $request) {
+        return response()->json($request->user(),200);
     }
 }

@@ -223,4 +223,14 @@ class AppFlow extends Controller
             'id' => $id,
         ]);
     }
+
+    public function cek_verif(Request $request) {
+        $aplikasi = business_verification::where('user_id', $request->user()->id)->first();
+        if (!$aplikasi) {
+            return response()->json([
+                'message' => 'belum mengajukan bisnis'
+            ]);
+        }
+        return response()->json($aplikasi,200);
+    }
 }
