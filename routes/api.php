@@ -26,5 +26,6 @@ Route::prefix('/v1')->group(function () {
     Route::post('/financing-applications', [AppFlow::class, 'pengajuan_pembiayaan'])->middleware('auth:sanctum');
     Route::patch('/financing-applications/{id}', [AppFlow::class, 'analisis_peminjaman'])->middleware('auth:sanctum');
     Route::get('/financing-applications', [AppFlow::class, 'cek_verifs'])->middleware('auth:sanctum');
-
+    //Route untuk installments
+    Route::get('/installments', [AppFlow::class, 'installments'])->middleware('auth:sanctum');
 });

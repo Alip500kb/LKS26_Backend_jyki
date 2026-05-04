@@ -59,7 +59,7 @@ class AppFlow extends Controller
     public function verifikasi_oleh_verifier(Request $request,$id) {
         $valid = Validator::make($request->all(), [
             'status' => 'required',
-            'rejected_reason' => 'sometimes'
+            'reason' => 'sometimes'
         ]);
 
         $verifikasi = business_verification::where('id', $id)->first();
@@ -77,7 +77,7 @@ class AppFlow extends Controller
 
         $data = $request->only(['status','rejected_reason']);
 
-        if ($request->status == 'rejected' && !$request->filled('rejected_reason')) {
+        if ($request->status == 'rejected' && !$request->filled('reason')) {
             return response()->json([
                 'message' => 'data reason belum ter isi'
             ],422);
@@ -201,7 +201,7 @@ class AppFlow extends Controller
 
         $pokok = $ajuan_pembiayaan->jumlah_pembiayaan;
         $bunga = $ajuan_pembiayaan->jumlah_pembiayaan * 0.06 * ($ajuan_pembiayaan->tenor_bulan / 12);
-        $total = $pokok + $bunga;
+        $bulanan = ($bunga / $ajuan_pembiayaan->tenor_bulan) + ($pokok / $ajuan_pembiayaan->tenor_bulan);
         $tempo_awal = Carbon::now();
 
         if ($ajuan_pembiayaan->status == 'approved') {
@@ -209,10 +209,10 @@ class AppFlow extends Controller
             installment::create([
             'financing_application_id' => $ajuan_pembiayaan->id,
             'installment_number' => $i,
-            'jatuh_tempo' => $tempo_awal->addDays(30 * $i),
-            'nominal_pokok' => $pokok,
-            'nominal_bunga' => $bunga,
-            'total_cicilan' => $total,
+            'jatuh_tempo' => $tempo_awal->addDays(30),
+            'nominal_pokok' => $pokok / $ajuan_pembiayaan->tenor_bulan,
+            'nominal_bunga' => $bunga / $ajuan_pembiayaan->tenor_bulan,
+            'total_cicilan' => $bulanan,
             'status' => 'unpaid'
         ]);
         }
@@ -238,9 +238,22 @@ class AppFlow extends Controller
         $aplikasi = financing_application::where('user_id', $request->user()->id)->first();
         if (!$aplikasi) {
             return response()->json([
-                'message' => 'belum mengajukan bisnis'
+                'message' => 'belum mengajukan aplikasi cicilan'
             ]);
         }
         return response()->json($aplikasi,200);
+    }
+
+    public function installments(Request $request) {
+        $apps = financing_application::where('user_id', $request->user()->id)->first();
+        if (!$apps) {
+            return response()->json('tidak ditemukan');
+        }
+        $cicilan = installment::where('financing_application_id', $apps->id)->get();
+        if (!$cicilan) {
+            return response()->json('tidak ditemukan',200);
+        }
+
+        return response()->json($cicilan,200);
     }
 }
