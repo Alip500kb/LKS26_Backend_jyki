@@ -6,6 +6,7 @@ use App\Models\application_log;
 use App\Models\business_verification;
 use App\Models\financing_application;
 use App\Models\installment;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -59,7 +60,7 @@ class AppFlow extends Controller
     public function verifikasi_oleh_verifier(Request $request,$id) {
         $valid = Validator::make($request->all(), [
             'status' => 'required',
-            'reason' => 'sometimes'
+            'rejected_reason' => 'sometimes'
         ]);
 
         $verifikasi = business_verification::where('id', $id)->first();
@@ -77,18 +78,21 @@ class AppFlow extends Controller
 
         $data = $request->only(['status','rejected_reason']);
 
-        if ($request->status == 'rejected' && !$request->filled('reason')) {
+        if ($request->status == 'rejected' && !$request->filled('rejected_reason')) {
             return response()->json([
                 'message' => 'data reason belum ter isi'
             ],422);
         } elseif ($request->status == 'verified') {
             $verifikasi->update([
-                'status' => $request->status
+                'status' => $request->status,
+                'verified_by' => $request->user()->id,
+                'verified_at' => Carbon::now()
             ]);
         }
         else {
             $verifikasi->update($data);
             $verifikasi->update([
+                'rejected_reason' => $request->rejected_reason,
                 'verified_by' => $request->user()->id,
                 'verified_at' => Carbon::now()
             ]);
@@ -119,7 +123,7 @@ class AppFlow extends Controller
             return response()->json([
                 'message' => 'anda melebihi batas pembiayaan yaitu ' . $aplikasi_bisnis->omzet_bulanan * 3
             ],403);
-        } elseif ($aplikasi_bisnis->lama_usaha_tahun <= 1 ) {
+        } elseif ($aplikasi_bisnis->lama_usaha_tahun < 1 ) {
             return response()->json([
                 'message' => 'usaha anda masih terlalu baru, minimal berjalan selama lebih dari 1 tahun.Tetap semangat!!'
             ],403);
@@ -204,6 +208,10 @@ class AppFlow extends Controller
         $bulanan = ($bunga / $ajuan_pembiayaan->tenor_bulan) + ($pokok / $ajuan_pembiayaan->tenor_bulan);
         $tempo_awal = Carbon::now();
 
+        if (installment::where('financing_application_id',$ajuan_pembiayaan->id)->exists()) {
+            return response()->json('status cicilan sudah berjalan',403);
+        }
+
         if ($ajuan_pembiayaan->status == 'approved') {
             for ($i =1; $i <= $ajuan_pembiayaan->tenor_bulan; $i++) {
             installment::create([
@@ -255,5 +263,34 @@ class AppFlow extends Controller
         }
 
         return response()->json($cicilan,200);
+    }
+
+    public function bayar(Request $request,$id) {
+        $installment = installment::where('id', $id)->first();
+        $cicilan = financing_application::where('id', $installment->financing_application_id)->first();
+
+        if ($cicilan->user_id != $request->user()->id) {
+            return response()->json('ditolak anda bukan pemilik cicilan ini',403);
+        } 
+
+        $installment->update([
+            "status" => "paid",
+            "paid_at" => Carbon::now()
+        ]);
+
+        return response()->json('berhasil');
+    }
+
+    public function unverified(Request $request) {
+        if ($request->user()->role == 'applicant') {
+            return response()->json('anda tidak memeiliki otorisasi',403);
+        }
+
+        $unverif = business_verification::where('status', 'submitted')->get()->map(function ($unverif) {
+            $unverif->nama = User::where('id', $unverif->user_id)->first()->name;
+            return $unverif;
+        });
+
+        return response()->json($unverif,200);
     }
 }

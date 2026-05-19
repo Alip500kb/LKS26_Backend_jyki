@@ -3,7 +3,9 @@
 use App\Http\Controllers\AppFlow;
 use App\Http\Controllers\AuthLogin;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Sanctum;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -22,10 +24,12 @@ Route::prefix('/v1')->group(function () {
     Route::post('/business-verifications', [AppFlow::class, 'verifikasi_bisnis'])->middleware('auth:sanctum');
     Route::patch('/business-verifications/{id}', [AppFlow::class, 'verifikasi_oleh_verifier'])->middleware('auth:sanctum');
     Route::get('/business-verifications', [AppFlow::class, 'cek_verif'])->middleware('auth:sanctum');
+    Route::get('/unverif-list', [AppFlow::class, 'unverified'])->middleware('auth:sanctum');
     //Route untuk pembiayaan
     Route::post('/financing-applications', [AppFlow::class, 'pengajuan_pembiayaan'])->middleware('auth:sanctum');
     Route::patch('/financing-applications/{id}', [AppFlow::class, 'analisis_peminjaman'])->middleware('auth:sanctum');
     Route::get('/financing-applications', [AppFlow::class, 'cek_verifs'])->middleware('auth:sanctum');
     //Route untuk installments
     Route::get('/installments', [AppFlow::class, 'installments'])->middleware('auth:sanctum');
+    Route::patch('/bayar/{id}', [AppFlow::class, 'bayar'])->middleware('auth:sanctum');
 });
