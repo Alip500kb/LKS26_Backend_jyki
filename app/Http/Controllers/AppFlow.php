@@ -177,9 +177,9 @@ class AppFlow extends Controller
             return response()->json(['status' => 'tidak ditemukan'],404);
         } elseif ($request->status == 'rejected') {
             $status = 'rejected_by_' . $request->user()->role;
-            $ajuan_pembiayaan->update([
+            $ajuan_pembiayaan->update([ 
                 'rejected_reason' => $request->reason
-            ]); //butuh reason jika statusnya di reject
+            ]);
         }
         // dd($status);
         $ajuan_pembiayaan->update([
@@ -293,4 +293,31 @@ class AppFlow extends Controller
 
         return response()->json($unverif,200);
     }
+
+    public function finan_unv(Request $request) {
+        if ($request->user()->role == 'applicant') {
+            return response()->json('anda tidak memiliki akses',403);
+        }
+
+        $finan_unv = financing_application::where('status', 'submitted')->get()->map( function ($finan_unv) {
+            $finan_unv->nama = User::where('id', $finan_unv->user_id)->first()->name;
+            $finan_unv->usaha = business_verification::where('id', $finan_unv->business_verification_id)->first()->nama_usaha;
+            return $finan_unv;
+        });
+
+        return response()->json($finan_unv,200);
+    }
+
+    public function all_finan(Request $request) {
+        if ($request->user()->role != ('manager' && 'admin')) {
+            return response()->json('anda tidak memiliki hak akses',403);
+        }
+
+        $all_finans = financing_application::all()->map(function ($all_finans) {
+            $all_finans->name = User::where('id', $all_finans->user_id)->first()->name;
+            $all_finans->usaha = business_verification::where('id', $all_finans->business_verifiaction_id)->first()->nama_usaha;
+            return $all_finans;
+        });
+        return response()->json($all_finans);
+    } 
 }
