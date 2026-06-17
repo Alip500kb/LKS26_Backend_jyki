@@ -315,7 +315,7 @@ class AppFlow extends Controller
 
         $all_finans = financing_application::all()->map(function ($all_finans) {
             $all_finans->name = User::where('id', $all_finans->user_id)->first()->name;
-            $all_finans->usaha = business_verification::where('id', $all_finans->business_verifiaction_id)->first()->nama_usaha;
+            $all_finans->usaha = business_verification::where('id', $all_finans->business_verification_id)->first()->nama_usaha;
             return $all_finans;
         });
         return response()->json($all_finans);
